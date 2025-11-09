@@ -28,4 +28,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+
+Route::middleware(['auth'])->group(function () {
+    // Rutas para administrar cursos (solo autenticados)
+    Route::resource('courses', CourseController::class)->except(['index', 'show']);
+});
 require __DIR__.'/auth.php';
