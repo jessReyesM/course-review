@@ -14,7 +14,7 @@ return new class extends Migration
     Schema::create('courses', function (Blueprint $table) {
         $table->id();
         $table->string('title');
-        $table->string('slug')->unique(); (Esencial para URLs amigables y SEO).
+        $table->string('slug')->unique(); 
         $table->text('description');
         $table->string('instructor');
         $table->decimal('price', 8, 2)->default(0);
