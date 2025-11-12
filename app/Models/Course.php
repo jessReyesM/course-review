@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Course extends Model
 {
@@ -12,6 +13,7 @@ class Course extends Model
 
     protected $fillable = [
         'title',
+        'slug',
         'description', 
         'instructor',
         'price',
@@ -19,19 +21,29 @@ class Course extends Model
         'level'
     ];
 
-    // Relación con reseñas
+    // Generar slug automáticamente antes de crear
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($course) {
+            if (empty($course->slug)) {
+                $course->slug = Str::slug($course->title);
+            }
+        });
+
+        static::updating(function ($course) {
+            if (empty($course->slug)) {
+                $course->slug = Str::slug($course->title);
+            }
+        });
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
     }
 
-    // (Opcional pero recomendado) Para URLs amigables
-    public function getRouteKeyName()
-    {
-        return 'slug'; // Para usar el slug en la URL en lugar del ID
-    }
-
-    // Métodos útiles para estadísticas
     public function averageRating(): float
     {
         return $this->reviews()->avg('rating') ?: 0;
