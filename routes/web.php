@@ -4,13 +4,17 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\PublicCourseController;
+use App\Models\Course;
 
 // Rutas PÚBLICAS (SSR) - Página principal
 Route::get('/', [PublicCourseController::class, 'index'])->name('home');
 Route::get('/curso/{course}', [PublicCourseController::class, 'show'])->name('courses.show');
 
+
+
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $courses = Course::latest()->paginate(9);
+    return view('dashboard', ['courses' => $courses]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
