@@ -102,8 +102,20 @@
 
                     {{-- FORMULARIO PARA DEJAR RESEÑA --}}
                     @auth
+                        @php
+                            // DEFINIR la variable $userReview aquí
+                            $userReview = $course->reviews->where('user_id', auth()->id())->first();
+                        @endphp
+                        
                         <div class="mt-8 border-t pt-6">
                             <h4 class="text-lg font-semibold mb-4">Dejar tu Reseña</h4>
+
+                            {{-- Mensaje informativo si ya tiene reseña --}}
+                            @if($userReview)
+                                <div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-4">
+                                    <p>💡 <strong>Ya tienes una reseña en este curso.</strong> Al enviar una nueva, se actualizará la existente.</p>
+                                </div>
+                            @endif
                             
                             <form action="{{ route('reviews.store', $course) }}" method="POST">
                                 @csrf
@@ -116,7 +128,8 @@
                                             <label class="cursor-pointer">
                                                 <input type="radio" name="rating" value="{{ $i }}" 
                                                        class="hidden star-input"
-                                                       {{ old('rating') == $i ? 'checked' : '' }}>
+                                                       {{ old('rating') == $i ? 'checked' : '' }}
+                                                       {{ $userReview && $userReview->rating == $i ? 'checked' : '' }}>
                                                 <span class="text-4xl text-gray-300 hover:text-yellow-400 star" data-value="{{ $i }}">★</span>
                                             </label>
                                         @endfor
@@ -135,7 +148,7 @@
                                         rows="5" 
                                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         placeholder="Comparte tu experiencia con este curso... ¿Qué te pareció? ¿Recomendarías este curso a otros?"
-                                    >{{ old('comment') }}</textarea>
+                                    >{{ $userReview ? $userReview->comment : old('comment') }}</textarea>
                                     @error('comment')
                                         <span class="text-red-600 text-sm mt-2 block">{{ $message }}</span>
                                     @enderror
@@ -148,7 +161,11 @@
                                         class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 shadow-md border-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         style="background-color: #2563eb; color: white;"
                                     >
-                                        📝 Publicar Reseña
+                                        @if($userReview)
+                                            📝 Actualizar Reseña
+                                        @else
+                                            📝 Publicar Reseña
+                                        @endif
                                     </button>
                                 </div>
                             </form>

@@ -11,20 +11,35 @@ class ReviewController extends Controller
 {
     public function store(Request $request, Course $course)
     {
-        // Validación básica
+        // Validación de datos
         $request->validate([
             'rating' => 'required|integer|between:1,5',
             'comment' => 'required|string|min:10|max:500',
         ]);
 
-        // Crear la reseña
-        Review::create([
-            'user_id' => Auth::id(),
-            'course_id' => $course->id,
-            'rating' => $request->rating,
-            'comment' => $request->comment,
-        ]);
+        // Verificar si el usuario YA TIENE una reseña en este curso
+        $existingReview = Review::where('user_id', Auth::id())
+                                ->where('course_id', $course->id)
+                                ->first();
 
-        return back()->with('success', '¡Reseña publicada correctamente!');
+        if ($existingReview) {
+            // ✅ ACTUALIZAR reseña existente
+            $existingReview->update([
+                'rating' => $request->rating,
+                'comment' => $request->comment,
+            ]);
+            
+            return back()->with('success', '¡Reseña actualizada correctamente!');
+        } else {
+            // ✅ CREAR nueva reseña
+            Review::create([
+                'user_id' => Auth::id(),
+                'course_id' => $course->id,
+                'rating' => $request->rating,
+                'comment' => $request->comment,
+            ]);
+            
+            return back()->with('success', '¡Reseña publicada correctamente!');
+        }
     }
 }
