@@ -61,6 +61,13 @@
                 <div class="p-6">
                     <h3 class="text-xl font-semibold mb-4">Reseñas ({{ $course->reviews->count() }})</h3>
 
+                    {{-- Mensaje de éxito --}}
+                    @if(session('success'))
+                        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                            {{ session('success') }}
+                        </div>
+                    @endif
+
                     @if($course->reviews->count() > 0)
                         <div class="space-y-4">
                             @foreach($course->reviews as $review)
@@ -71,9 +78,9 @@
                                         <div class="flex items-center ml-3">
                                             @for($i = 1; $i <= 5; $i++)
                                                 @if($i <= $review->rating)
-                                                    <span class="text-yellow-500">⭐</span>
+                                                    <span class="text-yellow-500">★</span>
                                                 @else
-                                                    <span class="text-gray-300">⭐</span>
+                                                    <span class="text-gray-300">★</span>
                                                 @endif
                                             @endfor
                                         </div>
@@ -93,23 +100,112 @@
                         </div>
                     @endif
 
-                    <!-- Botón para agregar reseña (solo usuarios autenticados) -->
+                    {{-- FORMULARIO PARA DEJAR RESEÑA --}}
                     @auth
-                    <div class="mt-6 text-center">
-                        <x-primary-button>
-                            {{ __('Dejar una Reseña') }}
-                        </x-primary-button>
-                    </div>
+                        <div class="mt-8 border-t pt-6">
+                            <h4 class="text-lg font-semibold mb-4">Dejar tu Reseña</h4>
+                            
+                            <form action="{{ route('reviews.store', $course) }}" method="POST">
+                                @csrf
+                                
+                                {{-- Calificación --}}
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 font-medium mb-2">Tu Calificación</label>
+                                    <div class="flex space-x-2" id="rating-stars">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <label class="cursor-pointer transform hover:scale-110 transition">
+                                                <input type="radio" name="rating" value="{{ $i }}" 
+                                                       class="hidden rating-input" 
+                                                       {{ old('rating') == $i ? 'checked' : '' }}>
+                                                <span class="text-3xl text-gray-300 hover:text-yellow-400 rating-star">★</span>
+                                            </label>
+                                        @endfor
+                                    </div>
+                                    @error('rating')
+                                        <span class="text-red-600 text-sm mt-1">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                {{-- Comentario --}}
+                                <div class="mb-4">
+                                    <label for="comment" class="block text-gray-700 font-medium mb-2">Tu Comentario</label>
+                                    <textarea 
+                                        name="comment" 
+                                        id="comment" 
+                                        rows="4" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="Comparte tu experiencia con este curso... ¿Qué te pareció? ¿Recomendarías este curso a otros?"
+                                    >{{ old('comment') }}</textarea>
+                                    @error('comment')
+                                        <span class="text-red-600 text-sm mt-1">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                <div class="flex justify-end">
+                                    <button 
+                                        type="submit" 
+                                        class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200 font-medium"
+                                    >
+                                        Publicar Reseña
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     @else
-                    <div class="mt-6 text-center">
-                        <p class="text-gray-500">
-                            <a href="{{ route('login') }}" class="text-indigo-600 hover:text-indigo-500">Inicia sesión</a> 
-                            para dejar una reseña
-                        </p>
-                    </div>
+                        {{-- USUARIO NO AUTENTICADO --}}
+                        <div class="mt-6 text-center border-t pt-6">
+                            <p class="text-gray-500">
+                                <a href="{{ route('login') }}" class="text-indigo-600 hover:text-indigo-500 font-medium">Inicia sesión</a> 
+                                para dejar una reseña
+                            </p>
+                        </div>
                     @endauth
                 </div>
             </div>
         </div>
     </div>
+
+    {{-- Script para las estrellas interactivas --}}
+    @auth
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ratingStars = document.querySelectorAll('.rating-star');
+            const ratingInputs = document.querySelectorAll('.rating-input');
+            
+            ratingStars.forEach((star, index) => {
+                star.addEventListener('click', function() {
+                    const ratingValue = index + 1;
+                    
+                    // Actualizar inputs
+                    ratingInputs.forEach((input, i) => {
+                        input.checked = (i + 1) === ratingValue;
+                    });
+                    
+                    // Actualizar estrellas visualmente
+                    ratingStars.forEach((s, i) => {
+                        if (i < ratingValue) {
+                            s.classList.remove('text-gray-300');
+                            s.classList.add('text-yellow-500');
+                        } else {
+                            s.classList.remove('text-yellow-500');
+                            s.classList.add('text-gray-300');
+                        }
+                    });
+                });
+            });
+
+            // Inicializar estrellas basado en valores antiguos (si hay error de validación)
+            const checkedInput = document.querySelector('.rating-input:checked');
+            if (checkedInput) {
+                const ratingValue = parseInt(checkedInput.value);
+                ratingStars.forEach((star, index) => {
+                    if (index < ratingValue) {
+                        star.classList.remove('text-gray-300');
+                        star.classList.add('text-yellow-500');
+                    }
+                });
+            }
+        });
+    </script>
+    @endauth
 </x-app-layout>
