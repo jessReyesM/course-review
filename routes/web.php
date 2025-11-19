@@ -26,6 +26,10 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth'])->group(function () {
     // Rutas para administrar cursos (solo autenticados)
     Route::resource('courses', CourseController::class)->except(['index', 'show']);
+
+     // Ruta para guardar reseñas
+    Route::post('/curso/{course}/reviews', [ReviewController::class, 'store'])
+        ->name('reviews.store');
 });
 
 require __DIR__.'/auth.php';
