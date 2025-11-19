@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\PublicCourseController;
 use App\Models\Course;
+use App\Http\Controllers\ReviewController;
 
 // Rutas PÚBLICAS (SSR) - Página principal
 Route::get('/', [PublicCourseController::class, 'index'])->name('home');

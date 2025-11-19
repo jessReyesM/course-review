@@ -2,24 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreReviewRequest;
-use App\Models\Course;
 use App\Models\Review;
+use App\Models\Course;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ReviewController extends Controller
 {
-    public function store(StoreReviewRequest $request, Course $course)
+    public function store(Request $request, Course $course)
     {
+        // Validación básica
+        $request->validate([
+            'rating' => 'required|integer|between:1,5',
+            'comment' => 'required|string|min:10|max:500',
+        ]);
+
         // Crear la reseña
         Review::create([
-            'user_id' => auth()->id(),      // Usuario autenticado
-            'course_id' => $course->id,     // Del curso en la URL
+            'user_id' => Auth::id(),
+            'course_id' => $course->id,
             'rating' => $request->rating,
             'comment' => $request->comment,
         ]);
 
-        // Redirigir con mensaje de éxito
         return back()->with('success', '¡Reseña publicada correctamente!');
     }
 }

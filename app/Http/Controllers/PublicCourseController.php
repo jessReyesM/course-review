@@ -29,5 +29,12 @@ class PublicCourseController extends Controller
         
         // Renderizamos la vista de detalle
         return view('courses.show', ['course' => $course]);
+
+         // Cargar reseñas con usuarios (Eager Loading)
+    $course->load(['reviews.user' => function($query) {
+        $query->select('id', 'name'); // Solo cargar datos necesarios
+    }]);
+
+    return view('courses.show', ['course' => $course]);
     }
 }

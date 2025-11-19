@@ -9,7 +9,7 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <!-- Información del Curso -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-8">
-                <div class="p-6">
+                <div class="p-6 bg-white border-b border-gray-200">
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <h1 class="text-3xl font-bold text-gray-900">{{ $course->title }}</h1>
@@ -20,7 +20,7 @@
                             <div class="flex items-center mt-1">
                                 <span class="text-yellow-500">⭐</span>
                                 <span class="text-sm text-gray-600 ml-1">
-                                    {{ number_format($course->averageRating(), 1) }} ({{ $course->totalReviews() }} reseñas)
+                                    {{ number_format($course->reviews->avg('rating') ?? 0, 1) }} ({{ $course->reviews->count() }} reseñas)
                                 </span>
                             </div>
                         </div>
@@ -58,7 +58,7 @@
 
             <!-- Sección de Reseñas -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
+                <div class="p-6 bg-white border-b border-gray-200">
                     <h3 class="text-xl font-semibold mb-4">Reseñas ({{ $course->reviews->count() }})</h3>
 
                     {{-- Mensaje de éxito --}}
@@ -78,9 +78,9 @@
                                         <div class="flex items-center ml-3">
                                             @for($i = 1; $i <= 5; $i++)
                                                 @if($i <= $review->rating)
-                                                    <span class="text-yellow-500">★</span>
+                                                    <span class="text-yellow-500 text-lg">★</span>
                                                 @else
-                                                    <span class="text-gray-300">★</span>
+                                                    <span class="text-gray-300 text-lg">★</span>
                                                 @endif
                                             @endfor
                                         </div>
@@ -109,44 +109,46 @@
                                 @csrf
                                 
                                 {{-- Calificación --}}
-                                <div class="mb-4">
-                                    <label class="block text-gray-700 font-medium mb-2">Tu Calificación</label>
-                                    <div class="flex space-x-2" id="rating-stars">
+                                <div class="mb-6">
+                                    <label class="block text-gray-700 font-medium mb-3">Tu Calificación</label>
+                                    <div class="flex space-x-1" id="rating-container">
                                         @for($i = 1; $i <= 5; $i++)
-                                            <label class="cursor-pointer transform hover:scale-110 transition">
+                                            <label class="cursor-pointer">
                                                 <input type="radio" name="rating" value="{{ $i }}" 
-                                                       class="hidden rating-input" 
+                                                       class="hidden star-input"
                                                        {{ old('rating') == $i ? 'checked' : '' }}>
-                                                <span class="text-3xl text-gray-300 hover:text-yellow-400 rating-star">★</span>
+                                                <span class="text-4xl text-gray-300 hover:text-yellow-400 star" data-value="{{ $i }}">★</span>
                                             </label>
                                         @endfor
                                     </div>
                                     @error('rating')
-                                        <span class="text-red-600 text-sm mt-1">{{ $message }}</span>
+                                        <span class="text-red-600 text-sm mt-2 block">{{ $message }}</span>
                                     @enderror
                                 </div>
 
                                 {{-- Comentario --}}
-                                <div class="mb-4">
+                                <div class="mb-6">
                                     <label for="comment" class="block text-gray-700 font-medium mb-2">Tu Comentario</label>
                                     <textarea 
                                         name="comment" 
                                         id="comment" 
-                                        rows="4" 
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        rows="5" 
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         placeholder="Comparte tu experiencia con este curso... ¿Qué te pareció? ¿Recomendarías este curso a otros?"
                                     >{{ old('comment') }}</textarea>
                                     @error('comment')
-                                        <span class="text-red-600 text-sm mt-1">{{ $message }}</span>
+                                        <span class="text-red-600 text-sm mt-2 block">{{ $message }}</span>
                                     @enderror
                                 </div>
 
+                                {{-- BOTÓN CON ESTILOS EXPLÍCITOS --}}
                                 <div class="flex justify-end">
                                     <button 
                                         type="submit" 
-                                        class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200 font-medium"
+                                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 shadow-md border-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        style="background-color: #2563eb; color: white;"
                                     >
-                                        Publicar Reseña
+                                        📝 Publicar Reseña
                                     </button>
                                 </div>
                             </form>
@@ -154,8 +156,8 @@
                     @else
                         {{-- USUARIO NO AUTENTICADO --}}
                         <div class="mt-6 text-center border-t pt-6">
-                            <p class="text-gray-500">
-                                <a href="{{ route('login') }}" class="text-indigo-600 hover:text-indigo-500 font-medium">Inicia sesión</a> 
+                            <p class="text-gray-500 text-lg">
+                                <a href="{{ route('login') }}" class="text-blue-600 hover:text-blue-500 font-semibold underline">Inicia sesión</a> 
                                 para dejar una reseña
                             </p>
                         </div>
@@ -165,47 +167,102 @@
         </div>
     </div>
 
-    {{-- Script para las estrellas interactivas --}}
+    {{-- JavaScript MEJORADO --}}
     @auth
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const ratingStars = document.querySelectorAll('.rating-star');
-            const ratingInputs = document.querySelectorAll('.rating-input');
+            const stars = document.querySelectorAll('.star');
+            const inputs = document.querySelectorAll('.star-input');
             
-            ratingStars.forEach((star, index) => {
+            // Función para actualizar estrellas
+            function updateStars(selectedValue) {
+                stars.forEach(star => {
+                    const starValue = parseInt(star.getAttribute('data-value'));
+                    if (starValue <= selectedValue) {
+                        star.style.color = '#eab308'; // Amarillo
+                        star.classList.remove('text-gray-300');
+                        star.classList.add('text-yellow-500');
+                    } else {
+                        star.style.color = '#d1d5db'; // Gris
+                        star.classList.remove('text-yellow-500');
+                        star.classList.add('text-gray-300');
+                    }
+                });
+            }
+            
+            // Evento click en estrellas
+            stars.forEach(star => {
                 star.addEventListener('click', function() {
-                    const ratingValue = index + 1;
+                    const value = this.getAttribute('data-value');
                     
-                    // Actualizar inputs
-                    ratingInputs.forEach((input, i) => {
-                        input.checked = (i + 1) === ratingValue;
+                    // Marcar el input correspondiente
+                    inputs.forEach(input => {
+                        input.checked = (input.value === value);
                     });
                     
-                    // Actualizar estrellas visualmente
-                    ratingStars.forEach((s, i) => {
-                        if (i < ratingValue) {
-                            s.classList.remove('text-gray-300');
-                            s.classList.add('text-yellow-500');
-                        } else {
-                            s.classList.remove('text-yellow-500');
-                            s.classList.add('text-gray-300');
+                    // Actualizar visualización
+                    updateStars(value);
+                });
+                
+                // Efecto hover
+                star.addEventListener('mouseenter', function() {
+                    const hoverValue = this.getAttribute('data-value');
+                    stars.forEach(s => {
+                        const sValue = parseInt(s.getAttribute('data-value'));
+                        if (sValue <= hoverValue) {
+                            s.style.color = '#fbbf24'; // Amarillo claro
                         }
                     });
                 });
-            });
-
-            // Inicializar estrellas basado en valores antiguos (si hay error de validación)
-            const checkedInput = document.querySelector('.rating-input:checked');
-            if (checkedInput) {
-                const ratingValue = parseInt(checkedInput.value);
-                ratingStars.forEach((star, index) => {
-                    if (index < ratingValue) {
-                        star.classList.remove('text-gray-300');
-                        star.classList.add('text-yellow-500');
+                
+                star.addEventListener('mouseleave', function() {
+                    const checkedInput = document.querySelector('.star-input:checked');
+                    if (checkedInput) {
+                        updateStars(checkedInput.value);
+                    } else {
+                        stars.forEach(s => {
+                            s.style.color = '#d1d5db'; // Gris
+                        });
                     }
+                });
+            });
+            
+            // Inicializar con valor existente
+            const checkedInput = document.querySelector('.star-input:checked');
+            if (checkedInput) {
+                updateStars(checkedInput.value);
+            } else {
+                // Inicializar todas como grises
+                stars.forEach(star => {
+                    star.style.color = '#d1d5db';
                 });
             }
         });
     </script>
     @endauth
+
+    {{-- ESTILOS CSS DE RESPALDO --}}
+    <style>
+        .star {
+            transition: color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .star:hover {
+            transform: scale(1.1);
+        }
+        /* Estilos explícitos para el botón */
+        .btn-resena {
+            background-color: #2563eb !important;
+            color: white !important;
+            font-weight: bold;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-resena:hover {
+            background-color: #1d4ed8 !important;
+        }
+    </style>
 </x-app-layout>
