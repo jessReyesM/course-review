@@ -46,16 +46,24 @@
                         <p class="text-gray-700">{{ $course->description }}</p>
                     </div>
 
-                    @auth
-                    <div class="mt-6 flex space-x-4">
-                        <x-primary-button onclick="location.href='{{ route('courses.edit', $course) }}'">
-                            {{ __('Editar Curso') }}
-                        </x-primary-button>
-                    </div>
-                    @endauth
-                </div>
-            </div>
-
+                 @auth
+    @can('update', $course)
+    <div class="mt-6 flex space-x-4">
+        <x-primary-button onclick="location.href='{{ route('courses.edit', $course) }}'">
+            {{ __('Editar Curso') }}
+        </x-primary-button>
+        
+        <!-- Botón para eliminar -->
+        <form action="{{ route('courses.destroy', $course) }}" method="POST" class="inline">
+            @csrf
+            @method('DELETE')
+            <x-danger-button type="submit" onclick="return confirm('¿Estás seguro de eliminar este curso?')">
+                {{ __('Eliminar Curso') }}
+            </x-danger-button>
+        </form>
+    </div>
+    @endcan
+@endauth
             <!-- Sección de Reseñas -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">

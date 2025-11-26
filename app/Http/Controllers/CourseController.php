@@ -7,9 +7,25 @@ use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class CourseController extends Controller
 {
+    public function __construct()
+    {
+        // Aplicar middleware de autenticación a todos los métodos excepto index y show
+        $this->middleware('auth')->except(['index', 'show']);
+
+        // Forzar user_id en cada creación (backup)
+        Course::creating(function ($course) {
+            if (Auth::check() && empty($course->user_id)) {
+                $course->user_id = Auth::id();
+            }
+        });
+    }
+
     /**
      * Show the form for creating a new resource.
      */
@@ -23,8 +39,20 @@ class CourseController extends Controller
      */
     public function store(StoreCourseRequest $request): RedirectResponse
     {
-        // La validación ya se hizo automáticamente en StoreCourseRequest
-        Course::create($request->validated());
+        // ✅ CORREGIDO: Crear manualmente con user_id
+        $course = Course::create([
+            'title' => $request->title,
+            'slug' => Str::slug($request->title),
+            'description' => $request->description,
+            'instructor' => $request->instructor,
+            'price' => $request->price,
+            'duration' => $request->duration,
+            'level' => $request->level,
+            'user_id' => Auth::id() // ← ¡ESTE ERA EL PROBLEMA!
+        ]);
+
+        // DEBUG: Verificar que se creó con user_id
+        \Log::info("Curso creado: {$course->title} por usuario: {$course->user_id}");
 
         return redirect()->route('dashboard')
             ->with('success', 'Curso creado exitosamente.');
@@ -33,31 +61,48 @@ class CourseController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Course $course): View
+    public function edit(Course $course)
     {
+        // Verificar autorización usando la Policy
+        if (Gate::denies('update', $course)) {
+            abort(403, 'No tienes permiso para editar este curso.');
+        }
+
         return view('courses.edit', compact('course'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateCourseRequest $request, Course $course): RedirectResponse
+    public function update(UpdateCourseRequest $request, Course $course)
     {
-        // La validación ya se hizo automáticamente en UpdateCourseRequest
-        $course->update($request->validated());
+        // Verificar autorización usando la Policy
+        if (Gate::denies('update', $course)) {
+            abort(403, 'No tienes permiso para actualizar este curso.');
+        }
 
-        return redirect()->route('dashboard')
+        $course->update([
+            'title' => $request->title,
+            'slug' => Str::slug($request->title),
+            'description' => $request->description,
+            'instructor' => $request->instructor,
+            'price' => $request->price,
+            'duration' => $request->duration,
+            'level' => $request->level,
+            // ❌ NO actualizar user_id - mantener el original
+        ]);
+
+        return redirect()->route('courses.show', $course)
             ->with('success', 'Curso actualizado exitosamente.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Course $course): RedirectResponse
+    public function destroy(Course $course)
     {
+        // Verificar autorización usando la Policy
+        if (Gate::denies('delete', $course)) {
+            abort(403, 'No tienes permiso para eliminar este curso.');
+        }
+
         $course->delete();
 
-        return redirect()->route('dashboard')
+        return redirect()->route('courses.index')
             ->with('success', 'Curso eliminado exitosamente.');
     }
 }

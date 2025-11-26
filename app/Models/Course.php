@@ -18,7 +18,8 @@ class Course extends Model
         'instructor',
         'price',
         'duration',
-        'level'
+        'level',
+         'user_id' // ← DEBE ESTAR AQUÍ
     ];
 
     // Generar slug automáticamente antes de crear
