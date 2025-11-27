@@ -15,7 +15,7 @@ class StoreCourseRequest extends FormRequest
     {
         return [
             'title' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:courses,slug',
+            //'slug' => 'required|string|max:255|unique:courses,slug',
             'description' => 'required|string',
             'instructor' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
